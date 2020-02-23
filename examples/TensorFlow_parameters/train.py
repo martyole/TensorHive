@@ -15,7 +15,7 @@ flags.DEFINE_string('job_name', '', 'One of ps, worker')
 
 
 def main(argv):
-    set_tf_config(FLAGS.job_name, FLAGS.task_index, FLAGS.worker_hosts)
+    set_tf_config(FLAGS.job_name, FLAGS.task_index, FLAGS.worker_hosts, FLAGS.ps_hosts)
     strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
     train_datasets = prepare_train_datasets(FLAGS.batch_size)
 
