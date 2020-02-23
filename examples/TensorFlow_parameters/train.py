@@ -1,5 +1,5 @@
 import tensorflow as tf
-from utils import build_and_compile_cnn_model, prepare_train_datasets, set_tf_config
+from utils import build_and_compile_cnn_model, prepare_train_datasets
 from absl import flags, app
 
 FLAGS = flags.FLAGS
@@ -13,10 +13,14 @@ flags.DEFINE_string('worker_hosts', '', 'Comma-separated list of hostname:port p
 flags.DEFINE_string('job_name', '', 'One of ps, worker')
 
 
-
 def main(argv):
-    set_tf_config(FLAGS.job_name, FLAGS.task_index, FLAGS.worker_hosts, FLAGS.ps_hosts)
-    strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
+    ps_hosts = FLAGS.ps_hosts.split(",") if len(FLAGS.ps_hosts) > 0 else []
+    worker_hosts = FLAGS.worker_hosts.split(",") if len(FLAGS.worker_hosts) > 0 else []
+    cluster_spec = tf.train.ClusterSpec({"ps": ps_hosts, "worker": worker_hosts})
+    cluster_resolver = tf.distribute.cluster_resolver.SimpleClusterResolver(cluster_spec, task_type=FLAGS.job_name,
+                                                                            task_id=FLAGS.task_index)
+
+    strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy(cluster_resolver=cluster_resolver)
     train_datasets = prepare_train_datasets(FLAGS.batch_size)
 
     with strategy.scope():

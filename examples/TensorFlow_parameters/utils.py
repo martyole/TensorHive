@@ -34,13 +34,3 @@ def build_and_compile_cnn_model():
         metrics=['accuracy'])
     return model
 
-
-def set_tf_config(task_type, task_index, worker_hosts_string, ps_hosts_string):
-    ps_hosts_processed = str(ps_hosts_string.split(",")).replace("'", "\"") if len(ps_hosts_string) > 0 else "[]"
-    worker_hosts_processed = str(worker_hosts_string.split(",")).replace("'", "\"") if len(worker_hosts_string) > 0 else "[]"
-    tf_config = '{"cluster":{"worker":__WORKER_HOSTS,"ps":__PS_HOSTS},"task":{"type":"__TASK_TYPE","index":__TASK_INDEX}}'
-    tf_config = tf_config.replace("__TASK_TYPE", task_type)
-    tf_config = tf_config.replace("__TASK_INDEX", str(task_index))
-    tf_config = tf_config.replace("__WORKER_HOSTS", worker_hosts_processed)
-    tf_config = tf_config.replace("__PS_HOSTS", ps_hosts_processed)
-    os.environ["TF_CONFIG"] = tf_config
