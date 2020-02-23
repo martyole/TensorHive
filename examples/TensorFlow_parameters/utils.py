@@ -36,7 +36,7 @@ def build_and_compile_cnn_model():
 
 
 def set_tf_config(task_type, task_index):
-    tf_config = '{"cluster":{"worker":["des11.kask:2226","des12.kask:2226"]},"task":{"type":"__TASK_TYPE","index":__TASK_INDEX}}'
+    tf_config = '{"cluster":{"worker":["des11.kask:2226","des12.kask:2226"],"ps":[]},"task":{"type":"__TASK_TYPE","index":__TASK_INDEX}}'
     tf_config = tf_config.replace("__TASK_TYPE", task_type)
     tf_config = tf_config.replace("__TASK_INDEX", str(task_index))
     os.environ["TF_CONFIG"] = tf_config
