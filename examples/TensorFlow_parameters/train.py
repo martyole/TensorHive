@@ -7,7 +7,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer('batch_size', 64, 'Batch size', lower_bound=0)
 flags.DEFINE_integer('epochs', 3, 'Number of epochs', lower_bound=0)
 flags.DEFINE_integer('steps_per_epoch', 500, 'Number of steps in each epoch', lower_bound=0)
-flags.DEFINE_integer('task_index', 500, 'Index of task within the job', lower_bound=0)
+flags.DEFINE_integer('task_index', 0, 'Index of task within the job', lower_bound=0)
 flags.DEFINE_string('ps_hosts', '', 'Comma-separated list of hostname:port pairs')
 flags.DEFINE_string('worker_hosts', '', 'Comma-separated list of hostname:port pairs')
 flags.DEFINE_string('job_name', '', 'One of ps, worker')
