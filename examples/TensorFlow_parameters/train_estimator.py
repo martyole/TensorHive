@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import tensorflow_datasets as tfds
 import tensorflow as tf
 from absl import flags, app
+import os
 
 BUFFER_SIZE = 10000
 BATCH_SIZE = 64
@@ -67,8 +68,21 @@ def model_fn(features, labels, mode):
             loss, tf.compat.v1.train.get_or_create_global_step()))
 
 
+def set_tf_config(task_type, task_index, worker_hosts_string, ps_hosts_string):
+    ps_hosts_processed = str(ps_hosts_string.split(",")).replace("'", "\"") if len(ps_hosts_string) > 0 else "[]"
+    worker_hosts_processed = str(worker_hosts_string.split(",")).replace("'", "\"") if len(
+        worker_hosts_string) > 0 else "[]"
+    tf_config = '{"cluster":{"worker":__WORKER_HOSTS,"ps":__PS_HOSTS},"task":{"type":"__TASK_TYPE","index":__TASK_INDEX}}'
+    tf_config = tf_config.replace("__TASK_TYPE", task_type)
+    tf_config = tf_config.replace("__TASK_INDEX", str(task_index))
+    tf_config = tf_config.replace("__WORKER_HOSTS", worker_hosts_processed)
+    tf_config = tf_config.replace("__PS_HOSTS", ps_hosts_processed)
+    os.environ["TF_CONFIG"] = tf_config
+
+
 def main(argv):
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
+    set_tf_config(FLAGS.job_name, FLAGS.task_index, FLAGS.worker_hosts, FLAGS.ps_hosts)
     strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
     config = tf.estimator.RunConfig(train_distribute=strategy)
 
