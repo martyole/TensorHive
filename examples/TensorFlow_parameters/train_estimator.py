@@ -4,15 +4,11 @@ import tensorflow as tf
 from absl import flags, app
 import os
 
-BUFFER_SIZE = 10000
-BATCH_SIZE = 64
-LEARNING_RATE = 1e-4
-
 FLAGS = flags.FLAGS
 
 flags.DEFINE_integer('batch_size', 64, 'Batch size', lower_bound=0)
-flags.DEFINE_integer('epochs', 3, 'Number of epochs', lower_bound=0)
-flags.DEFINE_integer('steps_per_epoch', 500, 'Number of steps in each epoch', lower_bound=0)
+flags.DEFINE_integer('buffer_size', 10000, 'Data set shuffle buffer size', lower_bound=0)
+flags.DEFINE_float('learning_rate', 0.0001, 'Learning rate', lower_bound=0)
 flags.DEFINE_integer('task_index', 0, 'Index of task within the job', lower_bound=0)
 flags.DEFINE_string('ps_hosts', '', 'Comma-separated list of hostname:port pairs')
 flags.DEFINE_string('worker_hosts', '', 'Comma-separated list of hostname:port pairs')
@@ -34,7 +30,7 @@ def input_fn(mode, input_context=None):
     if input_context:
         mnist_dataset = mnist_dataset.shard(input_context.num_input_pipelines,
                                             input_context.input_pipeline_id)
-    return mnist_dataset.map(scale).cache().shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
+    return mnist_dataset.map(scale).cache().shuffle(FLAGS.buffer_size).batch(FLAGS.batch_size)
 
 
 def model_fn(features, labels, mode):
@@ -52,18 +48,16 @@ def model_fn(features, labels, mode):
         return tf.estimator.EstimatorSpec(labels=labels, predictions=predictions)
 
     optimizer = tf.compat.v1.train.GradientDescentOptimizer(
-        learning_rate=LEARNING_RATE)
+        learning_rate=FLAGS.learning_rate)
     loss = tf.keras.losses.SparseCategoricalCrossentropy(
         from_logits=True, reduction=tf.keras.losses.Reduction.NONE)(labels, logits)
-    loss = tf.reduce_sum(loss) * (1. / BATCH_SIZE)
+    loss = tf.reduce_sum(loss) * (1. / FLAGS.batch_size)
     if mode == tf.estimator.ModeKeys.EVAL:
         return tf.estimator.EstimatorSpec(mode, loss=loss)
 
-    logging_hook = tf.estimator.LoggingTensorHook({"loss": loss}, every_n_iter=100)
     return tf.estimator.EstimatorSpec(
         mode=mode,
         loss=loss,
-        training_hooks=[logging_hook],
         train_op=optimizer.minimize(
             loss, tf.compat.v1.train.get_or_create_global_step()))
 
