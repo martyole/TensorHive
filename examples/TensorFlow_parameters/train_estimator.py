@@ -77,7 +77,7 @@ def set_tf_config(task_type, task_index, worker_hosts_string, ps_hosts_string):
 def main(argv):
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
     set_tf_config(FLAGS.job_name, FLAGS.task_index, FLAGS.worker_hosts, FLAGS.ps_hosts)
-    strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
+    strategy = tf.distribute.experimental.ParameterServerStrategy()
     config = tf.estimator.RunConfig(train_distribute=strategy)
 
     classifier = tf.estimator.Estimator(
