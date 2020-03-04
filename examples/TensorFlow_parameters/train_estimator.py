@@ -1,10 +1,21 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import tensorflow_datasets as tfds
 import tensorflow as tf
+from absl import flags, app
 
 BUFFER_SIZE = 10000
 BATCH_SIZE = 64
 LEARNING_RATE = 1e-4
+
+FLAGS = flags.FLAGS
+
+flags.DEFINE_integer('batch_size', 64, 'Batch size', lower_bound=0)
+flags.DEFINE_integer('epochs', 3, 'Number of epochs', lower_bound=0)
+flags.DEFINE_integer('steps_per_epoch', 500, 'Number of steps in each epoch', lower_bound=0)
+flags.DEFINE_integer('task_index', 0, 'Index of task within the job', lower_bound=0)
+flags.DEFINE_string('ps_hosts', '', 'Comma-separated list of hostname:port pairs')
+flags.DEFINE_string('worker_hosts', '', 'Comma-separated list of hostname:port pairs')
+flags.DEFINE_string('job_name', '', 'One of ps, worker')
 
 
 def input_fn(mode, input_context=None):
@@ -56,14 +67,19 @@ def model_fn(features, labels, mode):
             loss, tf.compat.v1.train.get_or_create_global_step()))
 
 
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
-strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
-config = tf.estimator.RunConfig(train_distribute=strategy)
+def main(argv):
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
+    strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
+    config = tf.estimator.RunConfig(train_distribute=strategy)
 
-classifier = tf.estimator.Estimator(
-    model_fn=model_fn, model_dir='./tmp/multiworker', config=config)
-tf.estimator.train_and_evaluate(
-    classifier,
-    train_spec=tf.estimator.TrainSpec(input_fn=input_fn),
-    eval_spec=tf.estimator.EvalSpec(input_fn=input_fn)
-)
+    classifier = tf.estimator.Estimator(
+        model_fn=model_fn, model_dir='./tmp/multiworker', config=config)
+    tf.estimator.train_and_evaluate(
+        classifier,
+        train_spec=tf.estimator.TrainSpec(input_fn=input_fn),
+        eval_spec=tf.estimator.EvalSpec(input_fn=input_fn)
+    )
+
+
+if __name__ == '__main__':
+    app.run(main)
